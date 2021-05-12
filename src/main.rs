@@ -1,5 +1,6 @@
 use image::{ImageBuffer, ImageFormat, Rgb};
 use rand::{prelude::*, distributions::{Distribution, Standard}};
+use std::cmp::max;
 use std::ops::Range;
 
 type Color = (u8, u8, u8);
@@ -12,8 +13,9 @@ const COLORS: [Color; 4] = [
     (0, 255, 0),
     (0, 0, 255),
 ];
-const BUILDING_HEIGHT_RANGE: Range<u32> = 500..800;
-const BUILDING_WIDTH_RANGE: Range<u32> = 200..400;
+const BUILDING_HEIGHT_RANGE: Range<u32> = 500..900;
+const BUILDING_WIDTH_RANGE: Range<u32> = 150..300;
+const BUILDING_OFFSET_RANGE: Range<i32> = -100..50;
 
 // TODO: This is a temporary hack. Eventually we will want to determine window margin off of building width.
 const WINDOW_MARGIN: u32 = 50;
@@ -98,10 +100,15 @@ impl Distribution<WindowType> for Standard {
 fn main() {
     let mut col = 0;
     let mut buildings = Vec::new();
+    let mut rng = rand::thread_rng();
 
     while col < IMAGE_WIDTH {
-        let building = Building::generate(col);
-        col += &building.width;
+        let offset = rng.gen_range(BUILDING_OFFSET_RANGE);
+        let position = max(0, col as i32 + offset) as u32;
+        if position >= IMAGE_WIDTH { break; }
+        let building = Building::generate(position);
+        // TODO: Can this cause bad things? I have a sneaky suspicion...
+        col += (building.width as i32 + offset) as u32;
         buildings.push(building);
     }
 
