@@ -7,11 +7,14 @@ type Color = (u8, u8, u8);
 
 const IMAGE_HEIGHT: u32 = 1080;
 const IMAGE_WIDTH: u32 = 1900;
-const COLORS: [Color; 4] = [
+const COLORS: [Color; 7] = [
     (255, 255, 255),
     (255, 0, 0),
     (0, 255, 0),
     (0, 0, 255),
+    (255, 255, 0),
+    (0, 255, 255),
+    (255, 0, 255),
 ];
 const BUILDING_HEIGHT_RANGE: Range<u32> = 500..900;
 const BUILDING_WIDTH_RANGE: Range<u32> = 150..300;
