@@ -59,13 +59,17 @@ impl Building {
         // TODO: Randomize window size?
         // TODO: Dynamically determine window margin based on building dimensions.
         let window_width = self.width as i32 - (WINDOW_MARGIN * 2) as i32;
-        if  window_width <= 0 { return; }
+        if window_width <= 0 { return; }
         let mut window_width = window_width as u32;
         let mut window_height = window_width;
+        let mut window_columns = 1;
 
         match self.window_type {
             WindowType::TwoByOne => { window_height /= 2; },
-            WindowType::OneByTwo => { window_width /= 2; },
+            WindowType::OneByTwo => {
+                window_width /= 2;
+                window_columns = 2;
+            },
             _ => (),
         };
 
@@ -74,14 +78,20 @@ impl Building {
         // TODO: Doesn't work with WindowType::OneByTwo
         while row < IMAGE_HEIGHT {
             let start_row = row;
-            for _ in 0..window_height {
-                if row >= IMAGE_HEIGHT { return; }
-                for col in 0..window_width {
-                    image.put_pixel(self.position + col as u32 + WINDOW_MARGIN, row, Rgb([120, 120, 120]));
+            let mut col = self.position + WINDOW_MARGIN;
+            for _ in 0..window_columns {
+                let start_col = col;
+                for _ in 0..window_height {
+                    if row >= IMAGE_HEIGHT || col >= IMAGE_WIDTH { return; }
+                    for i in 0..window_width {
+                        image.put_pixel(col + i, row, Rgb([120, 120, 120]));
+                    }
+                    row += 1;
                 }
-                row += 1;
+                self.render_window_borders(image, window_width, window_height, start_col, start_row);
+                col += WINDOW_MARGIN;
             }
-            self.render_window_borders(image, window_width, window_height, 0, start_row);
+
             row += WINDOW_MARGIN;
         }
     }
