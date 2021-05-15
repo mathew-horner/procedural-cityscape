@@ -4,9 +4,16 @@ mod window;
 
 use building::Building;
 use common::{BUILDING_OFFSET_RANGE, IMAGE_HEIGHT, IMAGE_WIDTH};
-use image::{ImageBuffer, ImageFormat};
+use image::{ImageBuffer, ImageFormat, Rgb};
 use rand::prelude::*;
 use std::cmp::max;
+
+const STAR_PRESENCE_PROBABILITY: f64 = 0.7;
+const STAR_CELL_COUNT_HORIZONTAL: u32 = 30;
+const STAR_CELL_COUNT_VERTICAL: u32 = (STAR_CELL_COUNT_HORIZONTAL as f64 * (IMAGE_HEIGHT as f64 / IMAGE_WIDTH as f64)) as u32;
+const STAR_CELL_WIDTH: u32 = (IMAGE_WIDTH as f64 / STAR_CELL_COUNT_HORIZONTAL as f64) as u32;
+const STAR_CELL_HEIGHT: u32 = (IMAGE_HEIGHT as f64 / STAR_CELL_COUNT_VERTICAL as f64) as u32;
+const STAR_BIG_PROBABILITY: f64 = 0.3;
 
 fn main() {
     let mut col = 0;
@@ -27,8 +34,24 @@ fn main() {
         last.width = IMAGE_WIDTH - last.x - 1;
     }
 
-    buildings.shuffle(&mut rng);
     let mut image = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
+
+    for row in 0..STAR_CELL_COUNT_VERTICAL {
+        for col in 0..STAR_CELL_COUNT_HORIZONTAL {
+            if rng.gen::<f64>() <= STAR_PRESENCE_PROBABILITY {
+                let star_size = if rng.gen::<f64>() <= STAR_BIG_PROBABILITY { 2 } else { 1 };
+                let x = (col * STAR_CELL_WIDTH) + rng.gen_range(0..STAR_CELL_WIDTH);
+                let y = (row * STAR_CELL_HEIGHT) + rng.gen_range(0..STAR_CELL_HEIGHT);
+                for i in 0..star_size {
+                    for j in 0..star_size {
+                        image.put_pixel(x + i, y + j, Rgb([255, 255, 0]));
+                    }
+                }
+            }
+        }
+    }
+
+    buildings.shuffle(&mut rng);
     for building in buildings.iter() {
         building.render(&mut image);
     }
