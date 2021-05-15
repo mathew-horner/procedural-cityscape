@@ -107,10 +107,14 @@ enum WindowType {
     /// [     ]
     /// [     ]
     TwoByTwo,
+    /// [ ] [ ]
+    /// [ ] [ ]
+    OneByTwo,
     /// [     ]
     TwoByOne,
     /// [ ] [ ]
     OneByOne,
+
 }
 
 impl WindowType {
@@ -120,6 +124,10 @@ impl WindowType {
                 let size = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
                 (size, size)
             },
+            Self::OneByTwo => {
+                let width = (building_width as i32 - (WINDOW_MARGIN * 3) as i32) / 2;
+                (width * 2, width)
+            }
             Self::TwoByOne => {
                 let width = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
                 (width / 2, width)
@@ -135,7 +143,7 @@ impl WindowType {
     pub fn per_row(&self) -> u32 {
         match self {
             Self::TwoByTwo | Self::TwoByOne => 1,
-            Self::OneByOne => 2,
+            Self::OneByTwo | Self::OneByOne => 2,
         }
     }
 }
@@ -146,7 +154,8 @@ impl Distribution<WindowType> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> WindowType {
         match rng.gen_range(0..WINDOW_TYPE_COUNT) {
             0 => WindowType::TwoByTwo,
-            1 => WindowType::TwoByOne,
+            1 => WindowType::OneByTwo,
+            2 => WindowType::TwoByOne,
             _ => WindowType::OneByOne,
         }
     }
