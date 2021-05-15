@@ -27,6 +27,7 @@ fn main() {
         last.width = IMAGE_WIDTH - last.x - 1;
     }
 
+    buildings.shuffle(&mut rng);
     let mut image = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
     for building in buildings.iter() {
         building.render(&mut image);
