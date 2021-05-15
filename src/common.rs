@@ -5,15 +5,11 @@ pub type Color = (u8, u8, u8);
 
 pub const IMAGE_HEIGHT: u32 = 1080;
 pub const IMAGE_WIDTH: u32 = 1900;
-pub const BUILDING_COLORS: [Color; 8] = [
+pub const BUILDING_COLORS: [Color; 4] = [
     (30, 30, 30),
-    (255, 255, 255),
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
-    (255, 255, 0),
-    (0, 255, 255),
-    (255, 0, 255),
+    (80, 80, 80),
+    (200, 200, 200),
+    (175, 175, 175),
 ];
 pub const BUILDING_HEIGHT_RANGE: Range<u32> = 500..900;
 pub const BUILDING_WIDTH_RANGE: Range<u32> = 150..300;
