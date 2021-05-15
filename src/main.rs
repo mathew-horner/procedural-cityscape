@@ -25,98 +25,111 @@ const WINDOW_MARGIN: u32 = 50;
 const WINDOW_BORDER_THICKNESS: u32 = 5;
 
 struct Building {
-    position: u32,
+    x: u32,
     height: u32,
     width: u32,
     color: Color,
-    window_type: WindowType,
+    windows: Vec<Window>,
+}
+
+struct Window {
+    x: u32,
+    y: u32,
+    height: u32,
+    width: u32,
 }
 
 impl Building {
-    fn generate(position: u32) -> Self {
+    fn generate(x: u32) -> Self {
         let mut rng = rand::thread_rng();
-        let width = rng.gen_range(BUILDING_WIDTH_RANGE.clone());
+        let building_width = rng.gen_range(BUILDING_WIDTH_RANGE.clone());
+        let building_height = rng.gen_range(BUILDING_HEIGHT_RANGE.clone());
+
+        let mut windows = Vec::new();
+
+        // TODO: Refactor this.
+        match rand::random::<WindowType>() {
+            // [     ]
+            // [     ]
+            WindowType::TwoByTwo => {
+                let window_size = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
+                if window_size > 0 {
+                    let window_size = window_size as u32;
+                    let mut y = WINDOW_MARGIN;
+                    while y < IMAGE_HEIGHT {
+                        windows.push(Window::new(WINDOW_MARGIN, y, window_size, window_size));
+                        y += window_size + WINDOW_MARGIN;
+                    }
+                }
+            },
+            // [     ]
+            WindowType::TwoByOne => {
+                let window_width = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
+                if window_width > 0 {
+                    let window_width = window_width as u32;
+                    let window_height = window_width / 2;
+                    let mut y = WINDOW_MARGIN;
+                    while y < IMAGE_HEIGHT {
+                        windows.push(Window::new(WINDOW_MARGIN, y, window_height, window_width));
+                        y += window_height + WINDOW_MARGIN;
+                    }
+                }
+            },
+            // [ ] [ ]
+            WindowType::OneByOne => {
+                let window_size = (building_width as i32 - (WINDOW_MARGIN * 3) as i32) / 2;
+                if window_size > 0 {
+                    let window_size = window_size as u32;
+                    let mut y = WINDOW_MARGIN;
+                    while y < IMAGE_HEIGHT {
+                        windows.push(Window::new(WINDOW_MARGIN, y, window_size, window_size));
+                        windows.push(Window::new(WINDOW_MARGIN * 2 + window_size, y, window_size, window_size));
+                        y += window_size + WINDOW_MARGIN;
+                    }
+                }
+            },
+        };
+
         Self {
-            position,
-            height: rng.gen_range(BUILDING_HEIGHT_RANGE.clone()),
-            width,
+            x,
+            height: building_height,
+            width: building_width,
             color: COLORS[rng.gen_range(0..COLORS.len())],
-            window_type: rand::random(),
+            windows,
         }
     }
 
     fn render(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
+        // TODO: Render window borders.
         for row in 0..self.height {
             for col in 0..self.width {
-                image.put_pixel(
-                    self.position + col,
-                    IMAGE_HEIGHT - row - 1,
-                    Rgb([self.color.0, self.color.1, self.color.2])
-                );
+                let (x, y) = self.to_screen_space(col, row);
+                put_pixel_safe(image, x, y, self.color.clone());
             }
         }
 
-        // TODO: Randomize window size?
-        // TODO: Dynamically determine window margin based on building dimensions.
-        let window_width = self.width as i32 - (WINDOW_MARGIN * 2) as i32;
-        if  window_width <= 0 { return; }
-        let mut window_width = window_width as u32;
-        let mut window_height = window_width;
-
-        match self.window_type {
-            WindowType::TwoByOne => { window_height /= 2; },
-            WindowType::OneByTwo => { window_width /= 2; },
-            _ => (),
-        };
-
-        let mut row = IMAGE_HEIGHT - self.height + WINDOW_MARGIN;
-
-        // TODO: Doesn't work with WindowType::OneByTwo
-        while row < IMAGE_HEIGHT {
-            let start_row = row;
-            for _ in 0..window_height {
-                if row >= IMAGE_HEIGHT { return; }
-                for col in 0..window_width {
-                    image.put_pixel(self.position + col as u32 + WINDOW_MARGIN, row, Rgb([120, 120, 120]));
+        for window in self.windows.iter() {
+            for row in window.y..window.y + window.height {
+                for col in window.x..window.x + window.width {
+                    let (x, y) = self.to_screen_space(col, row);
+                    put_pixel_safe(image, x, y, (120, 120, 120));
                 }
-                row += 1;
             }
-            self.render_window_borders(image, window_width, window_height, 0, start_row);
-            row += WINDOW_MARGIN;
         }
     }
 
-    fn render_window_borders(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, window_width: u32, window_height: u32, col: u32, row: u32) {
-        // TODO: This can probably be optimized to not overwrite pixels.
-        self.render_window_border_row(image, window_width, row);
-        self.render_window_border_row(image, window_width, row + window_height - WINDOW_BORDER_THICKNESS);
-        self.render_window_border_col(image, window_height, row, col);
-        self.render_window_border_col(image, window_height, row, col + window_width - WINDOW_BORDER_THICKNESS);
-    }
-
-    fn render_window_border_row(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, window_width: u32, start_row: u32) {
-        let mut row = start_row;
-        for _ in 0..WINDOW_BORDER_THICKNESS {
-            if row >= IMAGE_HEIGHT { return; }
-            for col in 0..window_width {
-                image.put_pixel(self.position + col as u32 + WINDOW_MARGIN, row, Rgb([0, 0, 0]));
-            }
-            row += 1;
-        }
-    }
-
-    fn render_window_border_col(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, window_height: u32, start_row: u32, start_col: u32) {
-        let mut col = start_col;
-        for _ in 0..WINDOW_BORDER_THICKNESS {
-            for row in 0..window_height {
-                if row >= IMAGE_HEIGHT { return; }
-                image.put_pixel(self.position + col as u32 + WINDOW_MARGIN, start_row + row, Rgb([0, 0, 0]));
-            }
-            col += 1;
-        }
+    fn to_screen_space(&self, x: u32, y: u32) -> (u32, u32) {
+        (self.x + x, IMAGE_HEIGHT - self.height + y)
     }
 }
 
+impl Window {
+    pub fn new(x: u32, y: u32, height: u32, width: u32) -> Self {
+        Window { x, y, height, width }
+    }
+}
+
+// TODO: Add WindowType::OneByTwo?
 enum WindowType {
     /// [     ]
     /// [     ]
@@ -124,7 +137,7 @@ enum WindowType {
     /// [     ]
     TwoByOne,
     /// [ ] [ ]
-    OneByTwo,
+    OneByOne,
 }
 
 const WINDOW_TYPE_COUNT: u32 = 4;
@@ -137,6 +150,12 @@ impl Distribution<WindowType> for Standard {
             _ => WindowType::OneByTwo,
         }
     }
+}
+
+// TODO: Make this not fail silently.
+fn put_pixel_safe(image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, x: u32, y: u32, color: Color) {
+    if x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT { return; }
+    image.put_pixel(x, y, Rgb([color.0, color.1, color.2]));
 }
 
 fn main() {
@@ -155,7 +174,7 @@ fn main() {
     }
 
     if let Some(last) = buildings.last_mut() {
-        last.width = IMAGE_WIDTH - last.position - 1;
+        last.width = IMAGE_WIDTH - last.x - 1;
     }
 
     let mut image = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
