@@ -46,49 +46,20 @@ impl Building {
         let building_height = rng.gen_range(BUILDING_HEIGHT_RANGE.clone());
 
         let mut windows = Vec::new();
+        let window_type = rand::random::<WindowType>();
+        let (window_height, window_width) = window_type.dimensions_for(building_width);
 
-        // TODO: Refactor this.
-        match rand::random::<WindowType>() {
-            // [     ]
-            // [     ]
-            WindowType::TwoByTwo => {
-                let window_size = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
-                if window_size > 0 {
-                    let window_size = window_size as u32;
-                    let mut y = WINDOW_MARGIN;
-                    while y < IMAGE_HEIGHT {
-                        windows.push(Window::new(WINDOW_MARGIN, y, window_size, window_size));
-                        y += window_size + WINDOW_MARGIN;
-                    }
+        if window_height > 0 && window_width > 0 {
+            let mut y = WINDOW_MARGIN;
+            while y < IMAGE_HEIGHT {
+                let mut x = WINDOW_MARGIN;
+                for _ in 0..window_type.per_row() {
+                    windows.push(Window::new(x, y, window_height, window_width));
+                    x += window_width + WINDOW_MARGIN;
                 }
-            },
-            // [     ]
-            WindowType::TwoByOne => {
-                let window_width = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
-                if window_width > 0 {
-                    let window_width = window_width as u32;
-                    let window_height = window_width / 2;
-                    let mut y = WINDOW_MARGIN;
-                    while y < IMAGE_HEIGHT {
-                        windows.push(Window::new(WINDOW_MARGIN, y, window_height, window_width));
-                        y += window_height + WINDOW_MARGIN;
-                    }
-                }
-            },
-            // [ ] [ ]
-            WindowType::OneByOne => {
-                let window_size = (building_width as i32 - (WINDOW_MARGIN * 3) as i32) / 2;
-                if window_size > 0 {
-                    let window_size = window_size as u32;
-                    let mut y = WINDOW_MARGIN;
-                    while y < IMAGE_HEIGHT {
-                        windows.push(Window::new(WINDOW_MARGIN, y, window_size, window_size));
-                        windows.push(Window::new(WINDOW_MARGIN * 2 + window_size, y, window_size, window_size));
-                        y += window_size + WINDOW_MARGIN;
-                    }
-                }
-            },
-        };
+                y += window_height + WINDOW_MARGIN;
+            }
+        }
 
         Self {
             x,
@@ -140,6 +111,33 @@ enum WindowType {
     TwoByOne,
     /// [ ] [ ]
     OneByOne,
+}
+
+impl WindowType {
+    pub fn dimensions_for(&self, building_width: u32) -> (u32, u32) {
+        let (height, width) = match self {
+            Self::TwoByTwo => {
+                let size = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
+                (size, size)
+            },
+            Self::TwoByOne => {
+                let width = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
+                (width / 2, width)
+            }
+            Self::OneByOne => {
+                let size = (building_width as i32 - (WINDOW_MARGIN * 3) as i32) / 2;
+                (size, size)
+            }
+        };
+        (max(0, height) as u32, max(0, width) as u32)
+    }
+
+    pub fn per_row(&self) -> u32 {
+        match self {
+            Self::TwoByTwo | Self::TwoByOne => 1,
+            Self::OneByOne => 2,
+        }
+    }
 }
 
 const WINDOW_TYPE_COUNT: u32 = 4;
