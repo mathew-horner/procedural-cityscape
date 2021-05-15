@@ -7,7 +7,7 @@ type Color = (u8, u8, u8);
 
 const IMAGE_HEIGHT: u32 = 1080;
 const IMAGE_WIDTH: u32 = 1900;
-const COLORS: [Color; 8] = [
+const BUILDING_COLORS: [Color; 8] = [
     (30, 30, 30),
     (255, 255, 255),
     (255, 0, 0),
@@ -94,26 +94,28 @@ impl Building {
             x,
             height: building_height,
             width: building_width,
-            color: COLORS[rng.gen_range(0..COLORS.len())],
+            color: BUILDING_COLORS[rng.gen_range(0..BUILDING_COLORS.len())],
             windows,
         }
     }
 
     fn render(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
-        // TODO: Render window borders.
-        for row in 0..self.height {
-            for col in 0..self.width {
-                let (x, y) = self.to_screen_space(col, row);
-                put_pixel_safe(image, x, y, self.color.clone());
-            }
-        }
-
+        self.render_rectangle(image, 0, 0, self.height, self.width, self.color.clone());
         for window in self.windows.iter() {
-            for row in window.y..window.y + window.height {
-                for col in window.x..window.x + window.width {
-                    let (x, y) = self.to_screen_space(col, row);
-                    put_pixel_safe(image, x, y, (120, 120, 120));
-                }
+            self.render_rectangle(image, window.y, window.x, window.height, window.width, (120, 120, 120));
+            self.render_rectangle(image, window.y, window.x, WINDOW_BORDER_THICKNESS, window.width, (0, 0, 0));
+            self.render_rectangle(image, window.y + window.height - WINDOW_BORDER_THICKNESS, window.x, WINDOW_BORDER_THICKNESS, window.width, (0, 0, 0));
+            self.render_rectangle(image, window.y, window.x, window.height, WINDOW_BORDER_THICKNESS, (0, 0, 0));
+            self.render_rectangle(image, window.y, window.x + window.width - WINDOW_BORDER_THICKNESS, window.height, WINDOW_BORDER_THICKNESS, (0, 0, 0));
+        }
+    }
+
+    // TODO: Change parameter order?
+    fn render_rectangle(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, start_row: u32, start_col: u32, height: u32, width: u32, color: Color) {
+        for row in start_row..start_row + height {
+            for col in start_col..start_col + width {
+                let (x, y) = self.to_screen_space(col, row);
+                put_pixel_safe(image, x, y, color.clone());
             }
         }
     }
@@ -147,7 +149,7 @@ impl Distribution<WindowType> for Standard {
         match rng.gen_range(0..WINDOW_TYPE_COUNT) {
             0 => WindowType::TwoByTwo,
             1 => WindowType::TwoByOne,
-            _ => WindowType::OneByTwo,
+            _ => WindowType::OneByOne,
         }
     }
 }
