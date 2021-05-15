@@ -15,7 +15,6 @@ impl Window {
     }
 }
 
-// TODO: Add WindowType::OneByTwo?
 pub enum WindowType {
     /// [     ]
     /// [     ]

@@ -1,5 +1,5 @@
 use super::{
-    common::{BUILDING_COLORS, BUILDING_HEIGHT_RANGE, BUILDING_WIDTH_RANGE, Color, IMAGE_HEIGHT, put_pixel_safe, WINDOW_MARGIN, WINDOW_BORDER_THICKNESS},
+    common::{BUILDING_BORDER_THICKNESS, BUILDING_COLORS, BUILDING_HEIGHT_RANGE, BUILDING_WIDTH_RANGE, Color, IMAGE_HEIGHT, put_pixel_safe, WINDOW_MARGIN, WINDOW_BORDER_THICKNESS},
     window::{Window, WindowType},
 };
 use image::{ImageBuffer, Rgb};
@@ -46,6 +46,10 @@ impl Building {
 
     pub fn render(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
         self.render_rectangle(image, 0, 0, self.height, self.width, self.color.clone());
+        self.render_rectangle(image, 0, 0, BUILDING_BORDER_THICKNESS, self.width, (0, 0, 0));
+        self.render_rectangle(image, 0, 0, self.height, BUILDING_BORDER_THICKNESS, (0, 0, 0));
+        self.render_rectangle(image, 0, self.width - BUILDING_BORDER_THICKNESS, self.height, BUILDING_BORDER_THICKNESS, (0, 0, 0));
+
         for window in self.windows.iter() {
             self.render_rectangle(image, window.y, window.x, window.height, window.width, (120, 120, 120));
             self.render_rectangle(image, window.y, window.x, WINDOW_BORDER_THICKNESS, window.width, (0, 0, 0));
@@ -55,7 +59,6 @@ impl Building {
         }
     }
 
-    // TODO: Change parameter order?
     fn render_rectangle(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, start_row: u32, start_col: u32, height: u32, width: u32, color: Color) {
         for row in start_row..start_row + height {
             for col in start_col..start_col + width {

@@ -18,6 +18,7 @@ pub const BUILDING_COLORS: [Color; 8] = [
 pub const BUILDING_HEIGHT_RANGE: Range<u32> = 500..900;
 pub const BUILDING_WIDTH_RANGE: Range<u32> = 150..300;
 pub const BUILDING_OFFSET_RANGE: Range<i32> = -100..50;
+pub const BUILDING_BORDER_THICKNESS: u32 = 5;
 // TODO: This is a temporary hack. Eventually we will want to determine window margin off of building width.
 pub const WINDOW_MARGIN: u32 = 50;
 pub const WINDOW_BORDER_THICKNESS: u32 = 5;
