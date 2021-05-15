@@ -44,7 +44,7 @@ fn main() {
                 let y = (row * STAR_CELL_HEIGHT) + rng.gen_range(0..STAR_CELL_HEIGHT);
                 for i in 0..star_size {
                     for j in 0..star_size {
-                        image.put_pixel(x + i, y + j, Rgb([255, 255, 0]));
+                        image.put_pixel(x + i, y + j, Rgb([255, 255, 120]));
                     }
                 }
             }
