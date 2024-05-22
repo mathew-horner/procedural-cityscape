@@ -3,7 +3,7 @@ use std::cmp::max;
 use rand::distributions::{Distribution, Standard};
 use rand::prelude::*;
 
-use crate::common::WINDOW_MARGIN;
+use crate::constants::*;
 use crate::math::{Dimensions2, Point2};
 
 pub struct Window {

@@ -33,6 +33,16 @@ impl<T> Vector2<T> {
         Self(Vector2Base { x, y })
     }
 
+    /// Get an immutable reference to this vector's `x` component.
+    pub fn x_ref(&self) -> &T {
+        &self.x
+    }
+
+    /// Get an immutable reference to this vector's `y` component.
+    pub fn y_ref(&self) -> &T {
+        &self.y
+    }
+
     /// Get a mutable reference to this vector's `x` component.
     pub fn x_mut(&mut self) -> &mut T {
         &mut self.x
@@ -80,6 +90,16 @@ impl<T> Dimensions2<T> {
             x: height,
             y: width,
         })
+    }
+
+    /// Get an immutable reference to the `height` dimension.
+    pub fn height_ref(&self) -> &T {
+        &self.x
+    }
+
+    /// Get an immutable reference to the `width` dimension.
+    pub fn width_ref(&self) -> &T {
+        &self.y
     }
 
     /// Get a mutable reference to the `height` dimension.

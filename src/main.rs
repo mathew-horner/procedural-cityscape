@@ -1,28 +1,18 @@
 mod building;
 mod common;
+mod constants;
 mod math;
+mod nightsky;
 mod window;
 
 use std::cmp::max;
 
 use image::{ImageBuffer, ImageFormat, Rgb};
+use math::{Dimensions2, Vector2};
 use rand::prelude::*;
 
 use crate::building::Building;
-use crate::common::{BUILDING_OFFSET_RANGE, IMAGE_HEIGHT, IMAGE_WIDTH};
-
-const STAR_PRESENCE_PROBABILITY: f64 = 0.7;
-
-const STAR_CELL_COUNT_HORIZONTAL: u32 = 30;
-
-const STAR_CELL_COUNT_VERTICAL: u32 =
-    (STAR_CELL_COUNT_HORIZONTAL as f64 * (IMAGE_HEIGHT as f64 / IMAGE_WIDTH as f64)) as u32;
-
-const STAR_CELL_WIDTH: u32 = (IMAGE_WIDTH as f64 / STAR_CELL_COUNT_HORIZONTAL as f64) as u32;
-
-const STAR_CELL_HEIGHT: u32 = (IMAGE_HEIGHT as f64 / STAR_CELL_COUNT_VERTICAL as f64) as u32;
-
-const STAR_BIG_PROBABILITY: f64 = 0.3;
+use crate::constants::*;
 
 fn main() {
     let mut col = 0;
@@ -35,7 +25,13 @@ fn main() {
         if position >= IMAGE_WIDTH {
             break;
         }
-        let building = Building::generate(position);
+        let building = Building::generate(building::GenerateOpts {
+            x: position,
+            size_range: Dimensions2::new(BUILDING_HEIGHT_RANGE, BUILDING_WIDTH_RANGE),
+            window_margin: WINDOW_MARGIN,
+            color_opts: &BUILDING_COLORS,
+            image_height: IMAGE_HEIGHT,
+        });
         // TODO: Can this cause bad things? I have a sneaky suspicion...
         col += (building.dimensions.width() as i32 + offset) as u32;
         buildings.push(building);
@@ -47,32 +43,30 @@ fn main() {
 
     let mut image = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    for row in 0..STAR_CELL_COUNT_VERTICAL {
-        for col in 0..STAR_CELL_COUNT_HORIZONTAL {
-            if rng.gen::<f64>() <= STAR_PRESENCE_PROBABILITY {
-                let star_size = if rng.gen::<f64>() <= STAR_BIG_PROBABILITY {
-                    2
-                } else {
-                    1
-                };
-                let x = (col * STAR_CELL_WIDTH) + rng.gen_range(0..STAR_CELL_WIDTH);
-                let y = (row * STAR_CELL_HEIGHT) + rng.gen_range(0..STAR_CELL_HEIGHT);
-                for i in 0..star_size {
-                    for j in 0..star_size {
-                        image.put_pixel(x + i, y + j, Rgb([255, 255, 120]));
-                    }
-                }
-            }
-        }
-    }
+    nightsky::render(nightsky::RenderOpts {
+        image: &mut image,
+        rng: &mut rng,
+        cell_count: Vector2::new(STAR_CELL_COUNT_HORIZONTAL, STAR_CELL_COUNT_VERTICAL),
+        cell_size: Dimensions2::new(STAR_CELL_HEIGHT, STAR_CELL_WIDTH),
+        star_presence_prob: STAR_PRESENCE_PROBABILITY,
+        star_enlargement_prob: STAR_BIG_PROBABILITY,
+        star_color: Rgb([255, 255, 120]),
+    });
 
+    // We shuffle the array first so that there is randomization in terms of which buildings
+    // overlap each other.
     buildings.shuffle(&mut rng);
+
     for building in buildings.iter() {
-        building.render(&mut image);
+        building.render(building::RenderOpts {
+            image: &mut image,
+            building_border_width: BUILDING_BORDER_THICKNESS,
+            window_border_width: WINDOW_BORDER_THICKNESS,
+            image_height: IMAGE_HEIGHT,
+        });
     }
 
     image
         .save_with_format("render.bmp", ImageFormat::Bmp)
         .unwrap();
 }
-
