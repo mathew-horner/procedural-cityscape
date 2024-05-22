@@ -1,14 +1,16 @@
-use super::{
-    common::{BUILDING_BORDER_THICKNESS, BUILDING_COLORS, BUILDING_HEIGHT_RANGE, BUILDING_WIDTH_RANGE, Color, IMAGE_HEIGHT, put_pixel_safe, WINDOW_MARGIN, WINDOW_BORDER_THICKNESS},
-    window::{Window, WindowType},
-};
 use image::{ImageBuffer, Rgb};
 use rand::prelude::*;
 
+use crate::common::{
+    put_pixel_safe, Color, BUILDING_BORDER_THICKNESS, BUILDING_COLORS, BUILDING_HEIGHT_RANGE,
+    BUILDING_WIDTH_RANGE, IMAGE_HEIGHT, WINDOW_BORDER_THICKNESS, WINDOW_MARGIN,
+};
+use crate::math::{Dimensions2, Point2};
+use crate::window::{Window, WindowType};
+
 pub struct Building {
     pub x: u32,
-    pub height: u32,
-    pub width: u32,
+    pub dimensions: Dimensions2<u32>,
     pub color: Color,
     pub windows: Vec<Window>,
 }
@@ -21,45 +23,115 @@ impl Building {
 
         let mut windows = Vec::new();
         let window_type = rand::random::<WindowType>();
-        let (window_height, window_width) = window_type.dimensions_for(building_width);
+        let window_dimensions = window_type.dimensions_for(building_width);
 
-        if window_height > 0 && window_width > 0 {
+        if !window_dimensions.is_zero() {
             let mut y = WINDOW_MARGIN;
             while y < IMAGE_HEIGHT {
                 let mut x = WINDOW_MARGIN;
                 for _ in 0..window_type.per_row() {
-                    windows.push(Window::new(x, y, window_height, window_width));
-                    x += window_width + WINDOW_MARGIN;
+                    windows.push(Window::new(Point2::new(x, y), window_dimensions.clone()));
+                    x += window_dimensions.width() + WINDOW_MARGIN;
                 }
-                y += window_height + WINDOW_MARGIN;
+                y += window_dimensions.height() + WINDOW_MARGIN;
             }
         }
 
         Self {
             x,
-            height: building_height,
-            width: building_width,
+            dimensions: Dimensions2::new(building_height, building_width),
             color: BUILDING_COLORS[rng.gen_range(0..BUILDING_COLORS.len())],
             windows,
         }
     }
 
     pub fn render(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
-        self.render_rectangle(image, 0, 0, self.height, self.width, self.color.clone());
-        self.render_rectangle(image, 0, 0, BUILDING_BORDER_THICKNESS, self.width, (0, 0, 0));
-        self.render_rectangle(image, 0, 0, self.height, BUILDING_BORDER_THICKNESS, (0, 0, 0));
-        self.render_rectangle(image, 0, self.width - BUILDING_BORDER_THICKNESS, self.height, BUILDING_BORDER_THICKNESS, (0, 0, 0));
+        self.render_rectangle(
+            image,
+            0,
+            0,
+            self.dimensions.height(),
+            self.dimensions.width(),
+            self.color.clone(),
+        );
+        self.render_rectangle(
+            image,
+            0,
+            0,
+            BUILDING_BORDER_THICKNESS,
+            self.dimensions.width(),
+            (0, 0, 0),
+        );
+        self.render_rectangle(
+            image,
+            0,
+            0,
+            self.dimensions.height(),
+            BUILDING_BORDER_THICKNESS,
+            (0, 0, 0),
+        );
+        self.render_rectangle(
+            image,
+            0,
+            self.dimensions.width() - BUILDING_BORDER_THICKNESS,
+            self.dimensions.height(),
+            BUILDING_BORDER_THICKNESS,
+            (0, 0, 0),
+        );
 
         for window in self.windows.iter() {
-            self.render_rectangle(image, window.y, window.x, window.height, window.width, (120, 120, 120));
-            self.render_rectangle(image, window.y, window.x, WINDOW_BORDER_THICKNESS, window.width, (0, 0, 0));
-            self.render_rectangle(image, window.y + window.height - WINDOW_BORDER_THICKNESS, window.x, WINDOW_BORDER_THICKNESS, window.width, (0, 0, 0));
-            self.render_rectangle(image, window.y, window.x, window.height, WINDOW_BORDER_THICKNESS, (0, 0, 0));
-            self.render_rectangle(image, window.y, window.x + window.width - WINDOW_BORDER_THICKNESS, window.height, WINDOW_BORDER_THICKNESS, (0, 0, 0));
+            self.render_rectangle(
+                image,
+                window.position().y(),
+                window.position().x(),
+                window.dimensions().height(),
+                window.dimensions().width(),
+                (120, 120, 120),
+            );
+            self.render_rectangle(
+                image,
+                window.position().y(),
+                window.position().x(),
+                WINDOW_BORDER_THICKNESS,
+                window.dimensions().width(),
+                (0, 0, 0),
+            );
+            self.render_rectangle(
+                image,
+                window.position().y() + window.dimensions().height() - WINDOW_BORDER_THICKNESS,
+                window.position().x(),
+                WINDOW_BORDER_THICKNESS,
+                window.dimensions().width(),
+                (0, 0, 0),
+            );
+            self.render_rectangle(
+                image,
+                window.position().y(),
+                window.position().x(),
+                window.dimensions().height(),
+                WINDOW_BORDER_THICKNESS,
+                (0, 0, 0),
+            );
+            self.render_rectangle(
+                image,
+                window.position().y(),
+                window.position().x() + window.dimensions().width() - WINDOW_BORDER_THICKNESS,
+                window.dimensions().height(),
+                WINDOW_BORDER_THICKNESS,
+                (0, 0, 0),
+            );
         }
     }
 
-    fn render_rectangle(&self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, start_row: u32, start_col: u32, height: u32, width: u32, color: Color) {
+    fn render_rectangle(
+        &self,
+        image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
+        start_row: u32,
+        start_col: u32,
+        height: u32,
+        width: u32,
+        color: Color,
+    ) {
         for row in start_row..start_row + height {
             for col in start_col..start_col + width {
                 let (x, y) = self.to_screen_space(col, row);
@@ -69,6 +141,7 @@ impl Building {
     }
 
     fn to_screen_space(&self, x: u32, y: u32) -> (u32, u32) {
-        (self.x + x, IMAGE_HEIGHT - self.height + y)
+        (self.x + x, IMAGE_HEIGHT - self.dimensions.height() + y)
     }
 }
+

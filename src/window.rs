@@ -1,17 +1,30 @@
-use super::common::WINDOW_MARGIN;
-use rand::{prelude::*, distributions::{Distribution, Standard}};
 use std::cmp::max;
 
+use rand::distributions::{Distribution, Standard};
+use rand::prelude::*;
+
+use crate::common::WINDOW_MARGIN;
+use crate::math::{Dimensions2, Point2};
+
 pub struct Window {
-    pub x: u32,
-    pub y: u32,
-    pub height: u32,
-    pub width: u32,
+    position: Point2<u32>,
+    dimensions: Dimensions2<u32>,
 }
 
 impl Window {
-    pub fn new(x: u32, y: u32, height: u32, width: u32) -> Self {
-        Window { x, y, height, width }
+    pub fn new(position: Point2<u32>, dimensions: Dimensions2<u32>) -> Self {
+        Self {
+            position,
+            dimensions,
+        }
+    }
+
+    pub fn position(&self) -> &Point2<u32> {
+        &self.position
+    }
+
+    pub fn dimensions(&self) -> &Dimensions2<u32> {
+        &self.dimensions
     }
 }
 
@@ -26,16 +39,16 @@ pub enum WindowType {
     TwoByOne,
     /// [ ] [ ]
     OneByOne,
-
 }
 
 impl WindowType {
-    pub fn dimensions_for(&self, building_width: u32) -> (u32, u32) {
+    /// For a building with the given size, return the size that this window type should be.
+    pub fn dimensions_for(&self, building_width: u32) -> Dimensions2<u32> {
         let (height, width) = match self {
             Self::TwoByTwo => {
                 let size = building_width as i32 - (WINDOW_MARGIN * 2) as i32;
                 (size, size)
-            },
+            }
             Self::OneByTwo => {
                 let width = (building_width as i32 - (WINDOW_MARGIN * 3) as i32) / 2;
                 (width * 2, width)
@@ -49,7 +62,7 @@ impl WindowType {
                 (size, size)
             }
         };
-        (max(0, height) as u32, max(0, width) as u32)
+        Dimensions2::new(max(0, height) as u32, max(0, width) as u32)
     }
 
     pub fn per_row(&self) -> u32 {
